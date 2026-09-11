@@ -3,6 +3,13 @@ interface Env {
 }
 
 const REQUIRED_FIELDS = ['playerName', 'handle', 'email'] as const;
+
+// ── Global application deadline (single source of truth) ──────────────
+// Stage 1 hiring closes Sep 18, 2026 23:59 IST (= Sep 18, 18:29 UTC).
+// Keep in sync with src/deadline.ts and server.ts.
+const APPLICATION_DEADLINE_ISO = '2026-09-18T18:29:00.000Z';
+const APPLICATION_DEADLINE_MS = Date.parse(APPLICATION_DEADLINE_ISO);
+
 const ALLOWED_ROLES = new Set([
   'marketing-outreach',
   'design-content',
@@ -83,6 +90,8 @@ export default {
         status: 'ok',
         timestamp: new Date().toISOString(),
         service: 'techorbit-api',
+        applicationsOpen: Date.now() < APPLICATION_DEADLINE_MS,
+        deadline: APPLICATION_DEADLINE_ISO,
       });
     }
 
@@ -92,6 +101,17 @@ export default {
       }
 
       try {
+        // Authoritative deadline enforcement: reject late submissions.
+        if (Date.now() >= APPLICATION_DEADLINE_MS) {
+          return json(
+            {
+              ok: false,
+              error: 'Applications are closed. The Stage 1 hiring window has ended.',
+            },
+            410,
+          );
+        }
+
         const body = (await request.json()) as Record<string, unknown>;
 
         for (const field of REQUIRED_FIELDS) {

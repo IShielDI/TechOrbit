@@ -14,6 +14,11 @@ const PORT = Number(process.env.PORT) || 3000;
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'applications.json');
 
+// ── Global application deadline (single source of truth) ──────────────
+// Stage 1 hiring closes Sep 18, 2026 23:59 IST (= Sep 18, 18:29 UTC).
+export const APPLICATION_DEADLINE_ISO = '2026-09-18T18:29:00.000Z';
+const APPLICATION_DEADLINE_MS = Date.parse(APPLICATION_DEADLINE_ISO);
+
 /** Whitelist of fields copied from an incoming request body. */
 const FIELD_WHITELIST: (keyof MemberApplication)[] = [
   'playerName',
@@ -123,6 +128,8 @@ async function startServer() {
       status: 'ok',
       timestamp: new Date().toISOString(),
       service: 'techorbit-api',
+      applicationsOpen: Date.now() < APPLICATION_DEADLINE_MS,
+      deadline: APPLICATION_DEADLINE_ISO,
     });
   });
 
@@ -138,6 +145,15 @@ async function startServer() {
   // Submit application endpoint (backend handling)
   app.post('/api/applications', (req, res) => {
     try {
+      // Authoritative deadline enforcement: reject late submissions.
+      if (Date.now() >= APPLICATION_DEADLINE_MS) {
+        res.status(410).json({
+          ok: false,
+          error: 'Applications are closed. The Stage 1 hiring window has ended.',
+        });
+        return;
+      }
+
       const body = (req.body ?? {}) as Record<string, unknown>;
 
       const playerName = typeof body.playerName === 'string' ? body.playerName.trim() : '';

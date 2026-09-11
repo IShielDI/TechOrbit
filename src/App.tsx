@@ -7,6 +7,7 @@ import { ArcadeAssetViewerModal } from './components/ArcadeAssetViewerModal';
 import { SelectedCandidatesBoard } from './components/SelectedCandidatesBoard';
 import { HackathonRoleId, HackathonRole } from './types';
 import { arcadeAudio } from './utils/audio';
+import { APPLICATION_DEADLINE_LABEL, isApplicationsOpen } from './deadline';
 import {
   Sparkles,
   CheckCircle2,
@@ -322,7 +323,7 @@ export const App: React.FC = () => {
 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 border-2 border-amber-400 text-amber-300 font-arcade text-xs shadow-[0_0_25px_rgba(255,184,0,0.3)]">
               <Clock className="w-4 h-4 text-amber-300 animate-pulse" />
-              <span>7-DAY APPLICATION WINDOW OPEN</span>
+              <span>APPLICATIONS CLOSE {APPLICATION_DEADLINE_LABEL}</span>
             </div>
           </div>
 
@@ -336,10 +337,13 @@ export const App: React.FC = () => {
             <button
               id="stage-1-apply-crew-btn"
               onClick={() => handleOpenApply('marketing-outreach')}
-              className="w-full sm:w-auto px-8 sm:px-10 py-4 rounded-xl bg-gradient-to-r from-[#FFC700] via-[#FF8A00] to-[#FF5500] hover:from-[#FFD233] hover:to-[#FF6A00] text-black font-arcade text-xs sm:text-sm font-bold tracking-wider transition-all shadow-[0_0_30px_rgba(255,140,0,0.45)] active:translate-y-0.5 cursor-pointer inline-flex items-center justify-center gap-2.5 group"
+              disabled={!isApplicationsOpen()}
+              className="w-full sm:w-auto px-8 sm:px-10 py-4 rounded-xl bg-gradient-to-r from-[#FFC700] via-[#FF8A00] to-[#FF5500] hover:from-[#FFD233] hover:to-[#FF6A00] text-black font-arcade text-xs sm:text-sm font-bold tracking-wider transition-all shadow-[0_0_30px_rgba(255,140,0,0.45)] active:translate-y-0.5 cursor-pointer inline-flex items-center justify-center gap-2.5 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-              <span>APPLY FOR TECHORBIT CREW</span>
+              <span>
+                {isApplicationsOpen() ? 'APPLY FOR TECHORBIT CREW' : 'APPLICATIONS CLOSED'}
+              </span>
             </button>
           </div>
 
