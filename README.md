@@ -38,6 +38,17 @@ Applications are validated, sanitized against a field whitelist, persisted to
 
 `tsc --noEmit` → `npm run lint`
 
+## Deploy (Render)
+
+The server binds `0.0.0.0` on `Number(process.env.PORT) || 3000`, so Render's supplied
+port is picked up automatically.
+
+- **Build command:** `npm install && npm run build`
+- **Start command:** `NODE_ENV=production npm start` *(the `NODE_ENV` prefix is required —
+  without it the server boots Vite dev middleware instead of serving the `dist/` build)*
+- Set `GOOGLE_SHEETS_WEBHOOK_URL` as an environment variable in the Render dashboard to
+  enable Sheets forwarding.
+
 See `HANDOFF.md` for the full technical reference (request/response contract, data model,
 form behavior, persistence, and known gaps).
 

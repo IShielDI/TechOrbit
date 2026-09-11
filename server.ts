@@ -10,7 +10,7 @@ import { createServer as createViteServer } from 'vite';
 loadEnv({ path: '.env.local' });
 loadEnv();
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'applications.json');
 
@@ -191,7 +191,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`TechOrbit running on port ${PORT}`);
   });
 }
 

@@ -41,7 +41,7 @@ logo, 8-bit sound FX, a 7-day countdown, and the application modal.
 | UI icons | `lucide-react` |
 | Confetti | `canvas-confetti` |
 | Animation | `motion` |
-| Backend | Express 4 (dev via `tsx`; prod bundled with esbuild into `dist/server.cjs`) |
+| Backend | Express 4 (dev via `tsx`; prod bundled with esbuild into `dist/server.cjs`), binds `0.0.0.0` on `process.env.PORT` (Render-ready) |
 | Env loading | `dotenv` 17 (`.env.local` then `.env`; real environment always wins) |
 | Declared, unused | `@google/genai` (scaffolding; no AI call implemented) |
 
@@ -225,7 +225,7 @@ date.
 
 | Item | Value |
 |---|---|
-| Port | `3000` |
+| Port | `Number(process.env.PORT) \|\| 3000` (Render sets `PORT` — default web-service port is 10000) |
 | Host | `0.0.0.0` |
 | JSON body parsing | `express.json()` enabled for all routes |
 | Data directory | `<cwd>/data` |
