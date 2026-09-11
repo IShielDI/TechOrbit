@@ -32,30 +32,46 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-function sanitizeApplication(body: Record<string, unknown>) {
-  const clean: Record<string, string> = {};
+interface Application {
+  id: string;
+  playerName: string;
+  handle: string;
+  email: string;
+  personalEmail: string;
+  studentId: string;
+  year: string;
+  role: string;
+  experienceLevel: string;
+  portfolioOrGithub: string;
+  linkedin: string;
+  motivation: string;
+  submittedAt: string;
+  receivedAt: string;
+}
+
+function sanitizeApplication(body: Record<string, unknown>): Application {
+  const application = {} as Application;
 
   for (const key of FIELD_WHITELIST) {
     const value = body[key];
-    clean[key] = typeof value === 'string' ? value.trim() : '';
+    application[key] = typeof value === 'string' ? value.trim() : '';
   }
 
-  if (!ALLOWED_ROLES.has(clean.role)) {
-    clean.role = 'technical-judging';
+  if (!ALLOWED_ROLES.has(application.role)) {
+    application.role = 'technical-judging';
   }
 
-  clean.submittedAt = new Date().toLocaleDateString('en-US', {
+  application.submittedAt = new Date().toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
 
-  clean.id = `TORB-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  application.id = `TORB-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  return {
-    ...clean,
-    receivedAt: new Date().toISOString(),
-  };
+  application.receivedAt = new Date().toISOString();
+
+  return application;
 }
 
 export default {

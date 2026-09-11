@@ -109,7 +109,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { id?: string };
         if (data?.id) {
           newApp.id = data.id; // overwrite with server-assigned id
         }
