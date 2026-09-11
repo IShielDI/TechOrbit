@@ -1,0 +1,6 @@
+{
+  "name": "techorbit",
+  "description": "techorbit - Campus Hackathon Launch and 7-day Member Hiring Terminal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
