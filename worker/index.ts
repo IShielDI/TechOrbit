@@ -1,0 +1,127 @@
+interface Env {
+  GOOGLE_SHEETS_WEBHOOK_URL: string;
+}
+
+const REQUIRED_FIELDS = ['playerName', 'handle', 'email'] as const;
+const ALLOWED_ROLES = new Set([
+  'marketing-outreach',
+  'design-content',
+  'logistics-operations',
+  'technical-judging',
+  'hospitality-volunteers',
+]);
+
+const FIELD_WHITELIST = [
+  'playerName',
+  'handle',
+  'email',
+  'personalEmail',
+  'studentId',
+  'year',
+  'role',
+  'experienceLevel',
+  'portfolioOrGithub',
+  'linkedin',
+  'motivation',
+] as const;
+
+function json(data: unknown, status = 200): Response {
+  return Response.json(data, {
+    status,
+    headers: { 'Cache-Control': 'no-store' },
+  });
+}
+
+function sanitizeApplication(body: Record<string, unknown>) {
+  const clean: Record<string, string> = {};
+
+  for (const key of FIELD_WHITELIST) {
+    const value = body[key];
+    clean[key] = typeof value === 'string' ? value.trim() : '';
+  }
+
+  if (!ALLOWED_ROLES.has(clean.role)) {
+    clean.role = 'technical-judging';
+  }
+
+  clean.submittedAt = new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  clean.id = `TORB-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  return {
+    ...clean,
+    receivedAt: new Date().toISOString(),
+  };
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/api/health' && request.method === 'GET') {
+      return json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        service: 'techorbit-api',
+      });
+    }
+
+    if (url.pathname === '/api/applications') {
+      if (request.method !== 'POST') {
+        return json({ ok: false, error: 'Method not allowed.' }, 405);
+      }
+
+      try {
+        const body = (await request.json()) as Record<string, unknown>;
+
+        for (const field of REQUIRED_FIELDS) {
+          if (typeof body[field] !== 'string' || !body[field].trim()) {
+            return json(
+              { ok: false, error: 'playerName, handle and email are required.' },
+              400,
+            );
+          }
+        }
+
+        if (!env.GOOGLE_SHEETS_WEBHOOK_URL) {
+          console.error('[sheets] GOOGLE_SHEETS_WEBHOOK_URL is not configured.');
+          return json({ ok: false, error: 'Application service is not configured.' }, 503);
+        }
+
+        const application = sanitizeApplication(body);
+
+        const sheetsResponse = await fetch(env.GOOGLE_SHEETS_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(application),
+        });
+
+        if (!sheetsResponse.ok) {
+          const details = await sheetsResponse.text().catch(() => '');
+          console.error(`[sheets] forward failed: ${sheetsResponse.status} ${details}`);
+          return json(
+            { ok: false, error: 'Application could not be recorded. Please try again.' },
+            502,
+          );
+        }
+
+        return json(
+          {
+            ok: true,
+            id: application.id,
+          },
+          201,
+        );
+      } catch (error) {
+        console.error('[api] application error:', error);
+        return json({ ok: false, error: 'Failed to record application.' }, 500);
+      }
+    }
+
+    return new Response('Not found', { status: 404 });
+  },
+} satisfies ExportedHandler<Env>;
