@@ -3,6 +3,7 @@ import { X, Sparkles, CheckCircle2, Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { HackathonRoleId, MemberApplication } from '../types';
 import { arcadeAudio } from '../utils/audio';
+import { APPLICATION_DEADLINE_LABEL, isApplicationsOpen } from '../deadline';
 
 const ROLE_LABELS: Record<HackathonRoleId, string> = {
   'marketing-outreach': 'Marketing & Outreach',
@@ -76,6 +77,14 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
     // Client-side required check
     if (!handle.trim() || !playerName.trim() || !email.trim()) return;
 
+    // Client-side deadline guard (server enforces authoritatively)
+    if (!isApplicationsOpen()) {
+      setSubmitError(
+        `Applications closed on ${APPLICATION_DEADLINE_LABEL}. The Stage 1 hiring window has ended.`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
     arcadeAudio.playCoin();
@@ -109,7 +118,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { id?: string };
         if (data?.id) {
           newApp.id = data.id; // overwrite with server-assigned id
         }
@@ -123,6 +132,11 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           origin: { y: 0.6 },
           colors: ['#FFD200', '#FF8A00', '#FF5500', '#22c55e'],
         });
+      } else if (response.status === 410) {
+        // Deadline passed on the server: hard stop, do NOT save locally.
+        setSubmitError(
+          `Applications closed on ${APPLICATION_DEADLINE_LABEL}. The Stage 1 hiring window has ended.`
+        );
       } else {
         const errorText = await response.text().catch(() => response.statusText);
         setSubmitError(
@@ -260,6 +274,16 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
           ) : (
             /* FORM */
             <form onSubmit={handleSubmit} className="space-y-4">
+              {!isApplicationsOpen() ? (
+                <div className="rounded-lg border border-red-500/60 bg-red-950/40 px-4 py-5 text-center space-y-2">
+                  <div className="font-arcade text-sm text-red-300">APPLICATIONS CLOSED</div>
+                  <p className="text-xs text-slate-300">
+                    The Stage 1 hiring window ended on {APPLICATION_DEADLINE_LABEL}. Thanks
+                    for your interest in TechOrbit.
+                  </p>
+                </div>
+              ) : (
+              <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-arcade text-amber-300 mb-1">
@@ -399,6 +423,8 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
                   <span>INSERT COIN // SUBMIT APPLICATION</span>
                 </button>
               </div>
+              </>
+              )}
             </form>
           )}
         </div>
