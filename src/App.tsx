@@ -207,7 +207,7 @@ export const App: React.FC = () => {
                 <span>STAGE 2</span>
               </div>
               <div className="font-cyber font-semibold text-xs text-white group-hover:text-amber-300">
-                Auditorium Hackathon
+                Hackathon Execution
               </div>
             </a>
 
