@@ -15,6 +15,49 @@ const ROLE_LABELS: Record<HackathonRoleId, string> = {
 
 const STORAGE_KEY = 'techorbit_hackathon_app';
 
+/** Accept only real GitHub profile URLs, e.g. github.com/username (with optional path). */
+function isValidGithubUrl(raw: string): boolean {
+  const url = raw.trim();
+  if (!url) return false;
+  try {
+    const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const host = u.hostname.toLowerCase();
+    if (host !== 'github.com' && host !== 'www.github.com') return false;
+    // Must have at least a username segment after the domain.
+    const segments = u.pathname.replace(/^\/|\/$/g, '').split('/').filter(Boolean);
+    return segments.length >= 1 && !!segments[0];
+  } catch {
+    return false;
+  }
+}
+
+/** Accept only real LinkedIn profile URLs, e.g. linkedin.com/in/username. */
+function isValidLinkedinUrl(raw: string): boolean {
+  const url = raw.trim();
+  if (!url) return false;
+  try {
+    const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const host = u.hostname.toLowerCase();
+    if (
+      host !== 'linkedin.com' &&
+      host !== 'www.linkedin.com' &&
+      !host.endsWith('.linkedin.com')
+    ) {
+      return false;
+    }
+    // Must start with /in/ and include a username.
+    const segments = u.pathname.replace(/^\/|\/$/g, '').split('/').filter(Boolean);
+    return segments.length >= 2 && segments[0].toLowerCase() === 'in' && !!segments[1];
+  } catch {
+    return false;
+  }
+}
+
+interface UrlErrors {
+  github?: string;
+  linkedin?: string;
+}
+
 interface ApplyModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,6 +81,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   const [submittedApp, setSubmittedApp] = useState<MemberApplication | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [urlErrors, setUrlErrors] = useState<UrlErrors>({});
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -61,6 +105,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
     setGithubUrl('');
     setLinkedinUrl('');
     setMotivation('');
+    setUrlErrors({});
   };
 
   const handleReset = () => {
@@ -76,6 +121,19 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
 
     // Client-side required check
     if (!handle.trim() || !playerName.trim() || !email.trim()) return;
+
+    // Validate GitHub & LinkedIn profile URLs before sending.
+    const nextUrlErrors: UrlErrors = {};
+    if (!isValidGithubUrl(githubUrl)) {
+      nextUrlErrors.github =
+        'Enter a valid GitHub profile, e.g. https://github.com/username';
+    }
+    if (!isValidLinkedinUrl(linkedinUrl)) {
+      nextUrlErrors.linkedin =
+        'Enter a valid LinkedIn profile, e.g. https://linkedin.com/in/username';
+    }
+    setUrlErrors(nextUrlErrors);
+    if (Object.keys(nextUrlErrors).length > 0) return;
 
     // Client-side deadline guard (server enforces authoritatively)
     if (!isApplicationsOpen()) {
@@ -373,10 +431,26 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
                     type="url"
                     required
                     placeholder="https://github.com/yourhandle"
+                    pattern="^(https?:\/\/)?(www\.)?github\.com\/[A-Za-z0-9_-]+.*$"
+                    title="Must be a valid GitHub profile URL, e.g. https://github.com/yourhandle"
                     value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    className="w-full bg-slate-900 border border-amber-500/40 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                    onChange={(e) => {
+                      setGithubUrl(e.target.value);
+                      if (urlErrors.github) {
+                        setUrlErrors((prev) => ({ ...prev, github: undefined }));
+                      }
+                    }}
+                    className={`w-full bg-slate-900 border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 ${
+                      urlErrors.github
+                        ? 'border-rose-500 focus:border-rose-500'
+                        : 'border-amber-500/40'
+                    }`}
                   />
+                  {urlErrors.github && (
+                    <p className="mt-1 text-[10px] text-rose-400 font-arcade">
+                      {urlErrors.github}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -387,10 +461,26 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
                     type="url"
                     required
                     placeholder="https://linkedin.com/in/yourhandle"
+                    pattern="^(https?:\/\/)?([a-zA-Z0-9-]+\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+.*$"
+                    title="Must be a valid LinkedIn profile URL, e.g. https://linkedin.com/in/yourhandle"
                     value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    className="w-full bg-slate-900 border border-cyan-500/40 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-400"
+                    onChange={(e) => {
+                      setLinkedinUrl(e.target.value);
+                      if (urlErrors.linkedin) {
+                        setUrlErrors((prev) => ({ ...prev, linkedin: undefined }));
+                      }
+                    }}
+                    className={`w-full bg-slate-900 border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-400 ${
+                      urlErrors.linkedin
+                        ? 'border-rose-500 focus:border-rose-500'
+                        : 'border-cyan-500/40'
+                    }`}
                   />
+                  {urlErrors.linkedin && (
+                    <p className="mt-1 text-[10px] text-rose-400 font-arcade">
+                      {urlErrors.linkedin}
+                    </p>
+                  )}
                 </div>
               </div>
 
