@@ -200,14 +200,11 @@ export const App: React.FC = () => {
             <a
               href="#stage-2"
               onClick={() => arcadeAudio.playSelect()}
-              className="bg-[#082016]/80 hover:bg-[#0b2b1e] border border-orange-500/60 hover:border-orange-400 p-3.5 rounded-xl transition-all text-left group shadow-[0_0_15px_rgba(255,102,0,0.15)]"
+              className="bg-[#082016]/80 hover:bg-[#0b2b1e] border border-orange-500/60 hover:border-orange-400 p-3.5 rounded-xl transition-all text-left group shadow-[0_0_15px_rgba(255,102,0,0.15)] flex flex-col justify-center"
             >
-              <div className="text-[10px] font-arcade text-orange-400 flex items-center gap-1.5 mb-1">
+              <div className="text-[10px] font-arcade text-orange-400 flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 text-orange-400" />
                 <span>STAGE 2</span>
-              </div>
-              <div className="font-cyber font-semibold text-xs text-white group-hover:text-amber-300">
-                Auditorium Hackathon
               </div>
             </a>
 
